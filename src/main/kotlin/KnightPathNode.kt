@@ -6,29 +6,27 @@
  * @param destination The destination square.
  */
 class KnightPathNode(
-    parent: KnightPathNode?,
+    val parent: KnightPathNode?,
     val coordinate: ChessBoard.Coordinate,
     destination: ChessBoard.Coordinate,
 ) : Comparable<KnightPathNode> {
-    var parent = parent
-        set(value) {
-            field = value
-            gCost = if (value == null) 0 else value.gCost + 1
-        }
-
-    // Visiting is a process of checking all the neighbors and adding them to a priority queue.
+    // visiting is a process of checking all the neighbors and adding them to a priority queue.
     // It only needs to be done once for a given `coordinate`, so it won't be visited again once
     // `visited` is set to true.
     var visited = false
 
+    // a node becomes invalidated when a better parent has been found, and we no longer want to visit
+    // an invalidated node
+    var invalidated = false
+
     // gCost is the realized cost, which is the number of moves so far in the best known path
-    private var gCost: Int = if (parent == null) 0 else parent.gCost + 1
+    private val gCost: Int = if (parent == null) 0 else parent.gCost + 1
 
     // hCost is the predicted cost to get from the current square to the destination square
     private val hCost = knightPathHeuristic(start = coordinate, end = destination)
 
     // fCost is a measure of the total expected cost to travel through this node
-    private val fCost get() = gCost + hCost
+    private val fCost = gCost + hCost
 
     /**
      * This defines how `KnightPathNode`s are ordered in a PriorityQueue.

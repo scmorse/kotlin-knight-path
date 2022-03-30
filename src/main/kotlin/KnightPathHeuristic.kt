@@ -1,17 +1,12 @@
 import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
 val KNIGHT_DISTANCE: Array<Array<Int>> = arrayOf(
-    arrayOf(4, 3, 2, 3, 2, 3, 2, 3, 4),
-    arrayOf(3, 2, 3, 2, 3, 2, 3, 2, 3),
-    arrayOf(2, 3, 4, 1, 2, 1, 4, 3, 2),
-    arrayOf(3, 2, 1, 2, 3, 2, 1, 2, 3),
-    arrayOf(2, 3, 2, 3, 0, 3, 2, 3, 2),
-    arrayOf(3, 2, 1, 2, 3, 2, 1, 2, 3),
-    arrayOf(2, 3, 4, 1, 2, 1, 4, 3, 2),
-    arrayOf(3, 2, 3, 2, 3, 2, 3, 2, 3),
-    arrayOf(4, 3, 2, 3, 2, 3, 2, 3, 4),
+    arrayOf(0, 3, 2, 3, 2, 3),
+    arrayOf(3, 2, 1, 2, 3, 4),
+    arrayOf(2, 1, 4, 3, 2, 3),
+    arrayOf(3, 2, 3, 2, 3, 4),
+    arrayOf(2, 3, 2, 3, 4, 3),
+    arrayOf(3, 4, 3, 4, 3, 4),
 )
 
 /**
@@ -22,28 +17,26 @@ val KNIGHT_DISTANCE: Array<Array<Int>> = arrayOf(
  * and [consistent](https://en.wikipedia.org/wiki/Consistent_heuristic) heuristic.
  */
 fun knightPathHeuristic(start: ChessBoard.Coordinate, end: ChessBoard.Coordinate): Double {
-    val xDiff = end.x - start.x
-    val yDiff = end.y - start.y
+    val xDiff = abs(end.x - start.x)
+    val yDiff = abs(end.y - start.y)
 
     // if `start` and `end` are close to each other, then using a pre-calculated
     // table significantly improves the accuracy
-    KNIGHT_DISTANCE.getOrNull(4 + yDiff)?.getOrNull(4 + xDiff)?.let {
+    KNIGHT_DISTANCE.getOrNull(yDiff)?.getOrNull(xDiff)?.let {
         return it.toDouble()
     }
 
     // but for longer distances, a rough estimate is good enough.
-    val maxDiff = max(abs(xDiff), abs(yDiff))
-    val minDiff = min(abs(xDiff), abs(yDiff))
-
     // when maxDiff is over 2x as big as minDiff, the knight uses its longer L-hop side
     // to travel the full maxDiff distance
-    if (minDiff <= maxDiff / 2.0) {
+    val (minDiff, maxDiff) = arrayOf(xDiff, yDiff).apply { sort() }
+    if (minDiff * 2 <= maxDiff) {
         return maxDiff / 2.0
     }
 
     // but when minDiff and maxDiff are more similarly sized, then partway along the knight's
     // journey there will be a change in which axis the longer L-hop side is traveled.
-    // For example, on a 9x9 board:
+    // For example, to move the knight between two squares where xDiff = 9 and yDiff = 9:
     //    | 0  ·  ·  ·  ·  ·  ·  ·  ·  · |
     //    | ·  ·  ·  ·  ·  ·  ·  ·  ·  · |
     //    | ·  1  ·  ·  ·  ·  ·  ·  ·  · |
@@ -54,7 +47,9 @@ fun knightPathHeuristic(start: ChessBoard.Coordinate, end: ChessBoard.Coordinate
     //    | ·  ·  ·  ·  ·  4  ·  ·  ·  · |
     //    | ·  ·  ·  ·  ·  ·  ·  5  ·  · |
     //    | ·  ·  ·  ·  ·  ·  ·  ·  ·  E |  <- (9 + 9) / 3 == 6 moves
-    // In this case, there's some clever geometrical math to show the approximate
-    // number of moves is given by:
+    // The Knight makes each move with a "manhattan distance" of 3 (2 vertical + 1 horizontal, for example),
+    // so if all of those moves can make progress against either xDiff and yDiff (without any backtracking), then
+    // this will be a good estimate. This works best at long distances, when the addition moves that require
+    // some backtracking to line up with the target are negligible compared to the total number of moves.
     return (minDiff + maxDiff) / 3.0
 }
